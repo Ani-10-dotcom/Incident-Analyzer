@@ -34,8 +34,14 @@
   const td = (text, cls) => { const c = document.createElement('td'); if (cls) c.className = cls; c.textContent = text ?? ''; return c; };
   const chip = (text, cls) => { const c = document.createElement('td'); c.className = 'nowrap'; if (text) { const s = document.createElement('span'); s.className = 'ia-chip ' + cls; s.textContent = text; c.append(s); } return c; };
 
-  // Clicking a reference ticket jumps to it in the table
+  const numCell = (n) => { const c = td('', 'nowrap'); const b = document.createElement('button'); b.type = 'button'; b.className = 'ia-open'; b.textContent = n; b.title = 'Open ticket ' + n; c.append(b); return c; };
+
+  // Clicking a ticket number opens its details; clicking a reference ticket jumps to it in the table
   tbody.addEventListener('click', (e) => {
+    const open = e.target.closest('.ia-open');
+    if (open) { window.iaOpenTicket(open.textContent); return; }
+    const row0 = e.target.closest('tr[data-key]');
+    if (row0 && !e.target.closest('button, a') && !getSelection().toString()) { window.iaOpenTicket(row0.dataset.key); return; }
     const b = e.target.closest('.ia-ref');
     if (!b) return;
     let row = tbody.querySelector(`tr[data-key="${CSS.escape(b.textContent)}"]`);
@@ -75,7 +81,7 @@
       if (m.reference_ticket) { const b = document.createElement('button'); b.type = 'button'; b.className = 'ia-ref'; b.textContent = m.reference_ticket; refCell.append(b); }
       const st = { Resolved: 'ok', New: 'new', 'In Progress': 'prog', Pending: 'pend' }[statusGroup(r.state)];
       tr.append(
-        td(r.number, 'nowrap'),
+        numCell(r.number),
         chip(r.priority, String(r.priority).toLowerCase()),
         td(r.short_description),
         chip(r.state, st),

@@ -45,7 +45,7 @@
           <div><h3>Resolution</h3><ol>${a.resolution.map((s) => `<li>${code(s)}</li>`).join('')}</ol></div>
           ${a.notes ? `<div><h3>Notes</h3><p>${code(a.notes)}</p></div>` : ''}
           <div><h3>Typical ticket wording</h3><ul>${(a.matches || []).map((m) => `<li>${esc(m)}</li>`).join('')}</ul></div>
-          ${a._hits.length ? `<div><h3>Tickets in the export that look like this</h3><ul class="kb-tickets">${a._hits.map((h) => `<li><a href="/?q=${encodeURIComponent(h.r.number)}">${esc(h.r.number)}</a> ${esc(h.r.short_description)} <span class="pct">(${Math.round(h.score * 100)}% alike, ${esc(h.r.state)})</span></li>`).join('')}</ul></div>` : ''}
+          ${a._hits.length ? `<div><h3>Tickets in the export that look like this</h3><ul class="kb-tickets">${a._hits.map((h) => `<li><a href="/#ticket=${encodeURIComponent(h.r.number)}">${esc(h.r.number)}</a> ${esc(h.r.short_description)} <span class="pct">(${Math.round(h.score * 100)}% alike, ${esc(h.r.state)})</span></li>`).join('')}</ul></div>` : ''}
         </div>
       </details>`).join('');
     const target = location.hash.slice(1);
