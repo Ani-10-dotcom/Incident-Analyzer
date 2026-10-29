@@ -14,7 +14,10 @@
 
   let kb = null;
   const kbReady = fetch('/data/known_issues.json').then((r) => (r.ok ? r.json() : [])).then((d) => { kb = d; }).catch(() => { kb = []; });
-  const closestArticle = (desc) => {
+  // An article that lists the ticket wins; otherwise suggest the closest by word match.
+  const closestArticle = (number, desc) => {
+    const linked = (kb || []).find((a) => (a.tickets || []).includes(number));
+    if (linked) return { a: linked, score: null };
     const w = words(desc);
     let best = null;
     for (const a of kb || []) {
@@ -31,7 +34,7 @@
     if (!r) { body.innerHTML = `<p>Ticket ${esc(n)} is not in this export.</p>`; return; }
     const m = (dash.data('similarity').data || []).find((x) => x.number === n) || {};
     const later = (dash.data('similarity').data || []).filter((x) => x.reference_ticket === n && x.match_type);
-    const art = kb ? closestArticle(r.short_description) : undefined;
+    const art = kb ? closestArticle(r.number, r.short_description) : undefined;
     const g = statusGroup(r.state);
     const row = (k, v) => `<div class="tk-row"><dt>${k}</dt><dd>${v || '<span class="tk-muted">—</span>'}</dd></div>`;
     body.innerHTML = `
@@ -47,7 +50,7 @@
         ${row('Assignment group', esc(r.assignment_group))}
         ${row('Match', m.match_type ? `<span class="ia-chip ${m.match_type === 'Duplicate' ? 'dup' : 'sim'}">${esc(m.match_type)}</span> of <button type="button" class="ia-ref tk-go" data-n="${esc(m.reference_ticket)}">${esc(m.reference_ticket)}</button>${m.similarity != null ? ` <span class="tk-muted">(${Math.round(m.similarity * 100)}% alike)</span>` : ''}` : '')}
         ${later.length ? row('Later matches', later.map((x) => `<button type="button" class="ia-ref tk-go" data-n="${esc(x.number)}">${esc(x.number)}</button> <span class="tk-muted">${esc(x.match_type)}</span>`).join(', ')) : ''}
-        ${row('Known issue', art === undefined ? '<span class="tk-muted">Loading…</span>' : art ? `<a href="/known-issues#${esc(art.a.number)}">${esc(art.a.number)}: ${esc(art.a.title)}</a> <span class="tk-muted">(${Math.round(art.score * 100)}% alike)</span>` : '<span class="tk-muted">No close article</span>')}
+        ${row('Known issue', art === undefined ? '<span class="tk-muted">Loading…</span>' : art ? `<a href="/known-issues#${esc(art.a.number)}">${esc(art.a.number)}: ${esc(art.a.title)}</a>${art.score != null ? ` <span class="tk-muted">(suggested, ${Math.round(art.score * 100)}% alike)</span>` : ''}` : '<span class="tk-muted">No close article</span>')}
       </dl>
       ${art ? `<section class="tk-fix"><h3>Suggested fix from ${esc(art.a.number)}</h3><ol>${art.a.resolution.map((s) => `<li>${esc(s).replace(/`([^`]+)`/g, '<code>$1</code>')}</li>`).join('')}</ol></section>` : ''}
       <footer class="tk-foot">

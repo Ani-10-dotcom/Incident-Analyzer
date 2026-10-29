@@ -14,12 +14,19 @@
 
   let articles = [];
 
+  // Each article lists its tickets by number. Tickets not listed on any article
+  // (for example from a newer export) are suggested by word match, 30% or more alike.
+  const listed = new Set();
+  const byNumber = new Map(incidents.map((r) => [r.number, r]));
   const lookalikes = (a) => {
     const phrases = [a.title, ...(a.matches || [])].map(words);
-    return incidents
+    const linked = (a.tickets || []).filter((n) => byNumber.has(n)).map((n) => ({ r: byNumber.get(n) }));
+    const suggested = incidents
+      .filter((r) => !listed.has(r.number))
       .map((r) => { const w = words(r.short_description); return { r, score: Math.max(...phrases.map((p) => jaccard(w, p))) }; })
       .filter((x) => x.score >= 0.3)
       .sort((x, y) => y.score - x.score);
+    return [...linked, ...suggested];
   };
 
   const render = () => {
@@ -36,7 +43,7 @@
           <span class="kb-tags">
             <span class="kb-tag">${esc(a.category)}</span>
             <span class="kb-tag grp">${esc(a.assignment_group)}</span>
-            ${a._hits.length ? `<span class="kb-tag hit">${a._hits.length} matching ticket${a._hits.length > 1 ? 's' : ''}</span>` : ''}
+            ${a._hits.length ? `<span class="kb-tag hit">${a._hits.length} ticket${a._hits.length > 1 ? 's' : ''}</span>` : ''}
           </span>
         </summary>
         <div class="kb-body">
@@ -44,8 +51,8 @@
           <div><h3>Cause</h3><p>${code(a.cause)}</p></div>
           <div><h3>Resolution</h3><ol>${a.resolution.map((s) => `<li>${code(s)}</li>`).join('')}</ol></div>
           ${a.notes ? `<div><h3>Notes</h3><p>${code(a.notes)}</p></div>` : ''}
-          <div><h3>Typical ticket wording</h3><ul>${(a.matches || []).map((m) => `<li>${esc(m)}</li>`).join('')}</ul></div>
-          ${a._hits.length ? `<div><h3>Tickets in the export that look like this</h3><ul class="kb-tickets">${a._hits.map((h) => `<li><a href="/#ticket=${encodeURIComponent(h.r.number)}">${esc(h.r.number)}</a> ${esc(h.r.short_description)} <span class="pct">(${Math.round(h.score * 100)}% alike, ${esc(h.r.state)})</span></li>`).join('')}</ul></div>` : ''}
+          <div><h3>How users describe it</h3><ul>${(a.matches || []).map((m) => `<li>${esc(m)}</li>`).join('')}</ul></div>
+          ${a._hits.length ? `<div><h3>Tickets</h3><ul class="kb-tickets">${a._hits.map((h) => `<li><a href="/#ticket=${encodeURIComponent(h.r.number)}">${esc(h.r.number)}</a> ${esc(h.r.short_description)} <span class="pct">(${h.score != null ? `suggested, ${Math.round(h.score * 100)}% alike, ` : ''}${esc(h.r.state)})</span></li>`).join('')}</ul></div>` : ''}
         </div>
       </details>`).join('');
     const target = location.hash.slice(1);
@@ -56,7 +63,8 @@
   fetch('/data/known_issues.json')
     .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then((data) => {
-      articles = data.map((a) => ({ ...a, _hits: lookalikes(a), _text: [a.number, a.title, a.category, a.assignment_group, a.symptoms, a.cause, a.notes, ...(a.matches || []), ...a.resolution].join(' ').toLowerCase() }));
+      data.forEach((a) => (a.tickets || []).forEach((n) => listed.add(n)));
+      articles = data.map((a) => ({ ...a, _hits: lookalikes(a), _text: [a.number, a.title, a.category, a.assignment_group, a.symptoms, a.cause, a.notes, ...(a.matches || []), ...(a.tickets || []), ...a.resolution].join(' ').toLowerCase() }));
       [...new Set(articles.map((a) => a.category))].sort().forEach((c) => catEl.add(new Option(c, c)));
       render();
     })
