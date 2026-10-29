@@ -1,0 +1,24 @@
+.kb-filters { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: end; }
+.kb-filters label { display: flex; flex-direction: column; gap: var(--cds-gap-xs); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.kb-filters input, .kb-filters select { font: inherit; color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-xs) var(--cds-pad-sm); min-height: 2.1rem; box-sizing: border-box; }
+.kb-filters input { min-width: min(100%, 18rem); }
+.kb-count { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; }
+.kb-list { display: grid; gap: var(--cds-gap-md); }
+.kb-item { background: var(--color-panel); border: 1px solid var(--color-border-line); border-left: 4px solid var(--ia-all); border-radius: var(--cds-radius); }
+.kb-item summary { cursor: pointer; padding: var(--cds-pad-md) var(--cds-pad-lg); display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-md); align-items: baseline; list-style: none; }
+.kb-item summary::-webkit-details-marker { display: none; }
+.kb-item summary::before { content: "▸"; color: var(--color-fg-muted); transition: transform var(--cds-dur-slow); }
+.kb-item[open] summary::before { transform: rotate(90deg); }
+.kb-num { font-variant-numeric: tabular-nums; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.kb-title { font-weight: var(--cds-font-weight-medium); font-size: var(--cds-font-size-heading); }
+.kb-tags { display: flex; gap: var(--cds-gap-xs); flex-wrap: wrap; margin-left: auto; }
+.kb-tag { font-size: var(--cds-font-size-caption); padding: 0 var(--cds-pad-sm); border-radius: 999px; background: color-mix(in srgb, var(--ia-new) 14%, transparent); color: var(--ia-new); white-space: nowrap; }
+.kb-tag.grp { background: color-mix(in srgb, var(--ia-res) 14%, transparent); color: var(--ia-res); }
+.kb-tag.hit { background: color-mix(in srgb, var(--ia-all) 14%, transparent); color: var(--ia-all); }
+.kb-body { padding: 0 var(--cds-pad-lg) var(--cds-pad-lg); display: grid; gap: var(--cds-gap-md); }
+.kb-body h3 { font-size: var(--cds-font-size-body); margin: 0 0 var(--cds-gap-xs); color: var(--ia-all); }
+.kb-body p, .kb-body ol, .kb-body ul { margin: 0; }
+.kb-body ol, .kb-body ul { padding-left: 1.3rem; display: grid; gap: var(--cds-gap-xs); }
+.kb-tickets li { font-variant-numeric: tabular-nums; }
+.kb-tickets .pct { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.kb-empty { padding: var(--cds-pad-lg); text-align: center; color: var(--color-fg-muted); }

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Incident Analyzer</title>
+<meta name="description" content="ServiceNow incidents by priority, duplicate and similar ticket matching, and weekly ticket status.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/dashboard.css">
+<script src="/assets/js/d3.v7.9.0.min.js"></script>
+<script src="/data/incidents.js"></script>
+<script src="/assets/js/dash-runtime.js"></script>
+</head>
+<body>
+<nav class="site-nav" aria-label="Site">
+  <div class="site-nav-in">
+    <a class="site-brand" href="/"><i></i>AI Incident Analyzer</a>
+    <div class="site-links">
+      <a href="/" aria-current="page">Dashboard</a>
+      <a href="/known-issues">Known issues</a>
+      <a href="/about">How it works</a>
+    </div>
+  </div>
+</nav>
+<main id="dash-root">
+
+<div class="ia">
+  <header class="ia-head">
+    <h1 class="ia-title">AI Incident Analyzer</h1>
+    <p class="ia-take" id="takeaway"><span class="ia-tk dash-skeleton" data-source="summary" data-field="new" data-row="0">—</span> new, <span class="ia-tk dash-skeleton" data-source="summary" data-field="in_progress" data-row="0">—</span> in progress and <span class="ia-tk dash-skeleton" data-source="summary" data-field="pending" data-row="0">—</span> pending tickets are waiting on the team.</p>
+    <span class="ia-sample">Incidents exported from ServiceNow (dev460097) on Oct 29, 2026. Priority 5 - Planning shows as P5, after P4. New is state New; In Progress is In Progress; Pending is On Hold; Resolved is Resolved or Closed.</span>
+  </header>
+
+  <div class="ia-tiles" id="tiles">
+    <div class="ia-tile t-all"><span class="ia-tile-label">All tickets</span><span class="ia-tile-num dash-skeleton" data-source="summary" data-field="total" data-row="0">—</span></div>
+    <div class="ia-tile t-new"><span class="ia-tile-label">New</span><span class="ia-tile-num dash-skeleton" data-source="summary" data-field="new" data-row="0">—</span></div>
+    <div class="ia-tile t-prog"><span class="ia-tile-label">In Progress</span><span class="ia-tile-num dash-skeleton" data-source="summary" data-field="in_progress" data-row="0">—</span></div>
+    <div class="ia-tile t-pend"><span class="ia-tile-label">Pending</span><span class="ia-tile-num dash-skeleton" data-source="summary" data-field="pending" data-row="0">—</span></div>
+    <div class="ia-tile t-res"><span class="ia-tile-label">Resolved</span><span class="ia-tile-num dash-skeleton" data-source="summary" data-field="resolved" data-row="0">—</span></div>
+  </div>
+
+  <div class="ia-tabs" role="tablist">
+    <button class="ia-tab" role="tab" id="tab-tickets" data-page="tickets" aria-selected="true">Tickets</button>
+    <button class="ia-tab" role="tab" id="tab-status" data-page="status" aria-selected="false">Status of tickets</button>
+  </div>
+
+  <section id="tickets" class="ia-card" role="tabpanel" aria-labelledby="tab-tickets">
+    <h2>Tickets</h2>
+    <p class="ia-note">Every incident, P1 first, then P2, P3, P4 and P5, newest first within each priority. Reference ticket is the earlier ticket with the closest matching description: a duplicate is a near-identical report within 3 days, similar is the same kind of issue seen before.</p>
+    <div class="ia-filters">
+      <label>From<input class="ia-from" id="ia-from" type="date" min="2000-01-01" max="2099-12-31"></label>
+      <label>To<input class="ia-to" id="ia-to" type="date" min="2000-01-01" max="2099-12-31"></label>
+      <label>Show<select class="ia-show" id="ia-show">
+        <option value="">All statuses</option>
+        <option value="Resolved">Resolved</option>
+        <option value="New">New</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Pending">Pending</option>
+      </select></label>
+      <label>Search<input class="ia-q" id="ia-q" type="search" placeholder="Number, description, group"></label>
+      <button class="ia-btn ia-reset" type="button">Reset</button>
+    </div>
+    <div class="ia-tablewrap">
+      <div class="ia-tablebox">
+        <table class="ia-table" id="ticket-table" data-source="incidents" data-row-key="number">
+          <thead><tr>
+            <th data-field="number">Number</th>
+            <th data-field="priority">Priority</th>
+            <th data-field="short_description">Short description</th>
+            <th data-field="state">State</th>
+            <th data-field="opened_at">Opened</th>
+            <th data-source="similarity" data-field="match_type">Match</th>
+            <th data-source="similarity" data-field="reference_ticket">Reference ticket</th>
+            <th data-field="category" class="ia-hide-narrow">Category</th>
+            <th data-field="assignment_group" class="ia-hide-narrow">Assignment group</th>
+          </tr></thead>
+          <tbody class="ia-tbody"></tbody>
+        </table>
+        <div class="ia-empty" hidden>No tickets match these filters.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="status" class="ia-card" role="tabpanel" aria-labelledby="tab-status" hidden>
+    <h2>New, in progress, pending and resolved tickets by week</h2>
+    <p class="ia-note">Tickets opened each week of the month, split by their status today. Week 1 is days 1 to 7, week 2 days 8 to 14, week 3 days 15 to 21, week 4 days 22 to 28 and week 5 the rest of the month.</p>
+    <div class="ia-filters">
+      <label>Year<select class="ia-year" id="ia-year"></select></label>
+      <label>Month<select class="ia-month" id="ia-month"></select></label>
+      <label>Week<select class="ia-wk" id="ia-wk">
+        <option value="">All weeks</option>
+        <option value="1">Week 1</option>
+        <option value="2">Week 2</option>
+        <option value="3">Week 3</option>
+        <option value="4">Week 4</option>
+        <option value="5">Week 5</option>
+      </select></label>
+    </div>
+    <div class="ia-legend" id="status-legend" data-source="weekly"><span><i class="sw-res"></i>Resolved</span><span><i class="sw-prog"></i>In Progress</span><span><i class="sw-pend"></i>Pending</span><span><i class="sw-new"></i>New</span></div>
+    <div class="ia-chart" id="status-chart" data-source="weekly"></div>
+  </section>
+</div>
+
+</main>
+<footer class="site-foot">Data: ServiceNow incident export from dev460097, Oct 29, 2026 (67 incidents). Caller and assignee names are left out.</footer>
+<script src="/assets/js/calcs.js"></script>
+<script src="/assets/js/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+[
+ {
+  "number": "KB0010001",
+  "title": "VPN disconnects for remote users",
+  "category": "Network",
+  "assignment_group": "Network Ops",
+  "matches": [
+   "VPN connection drops every few minutes",
+   "VPN keeps disconnecting when working from home"
+  ],
+  "symptoms": "VPN tunnel drops every few minutes, mostly on home Wi-Fi. User has to reconnect repeatedly.",
+  "cause": "The VPN client's idle timeout and MTU are too aggressive for consumer routers, and older client versions (below 5.2) don't recover from Wi-Fi power saving.",
+  "resolution": [
+   "Confirm the client version in the VPN app's About screen. Upgrade to the current approved version from Software Center if it is below 5.2.",
+   "Set the adapter MTU to 1400: run `netsh interface ipv4 set subinterface \"VPN\" mtu=1400 store=persistent` as admin.",
+   "Turn off Wi-Fi power saving: Device Manager > Network adapter > Power Management > untick 'Allow the computer to turn off this device'.",
+   "Ask the user to reconnect and stay connected for 15 minutes to confirm."
+  ],
+  "notes": "If drops continue on a wired connection, escalate to Network Ops with the client log (%ProgramData%\\VPN\\logs).",
+  "related_tickets": [
+   "INC0010047",
+   "INC0010048",
+   "INC0010083",
+   "INC0010102",
+   "INC0010116"
+  ]
+ },
+ {
+  "number": "KB0010002",
+  "title": "Outlook not syncing email",
+  "category": "Email",
+  "assignment_group": "Messaging",
+  "matches": [
+   "Outlook not syncing emails on laptop",
+   "Outlook emails not syncing since morning"
+  ],
+  "symptoms": "New mail stops arriving in Outlook desktop while Outlook on the web shows it. Status bar may say 'Disconnected' or 'Updating this folder'.",
+  "cause": "A corrupted local OST cache file, or Cached Exchange Mode stuck after a password change.",
+  "resolution": [
+   "Check Outlook on the web. If mail is there, the mailbox is fine and the problem is the local client.",
+   "Close Outlook, rename the .ost file in %LOCALAPPDATA%\\Microsoft\\Outlook to .ost.old.",
+   "Reopen Outlook and let it rebuild the cache (can take 10-30 minutes for large mailboxes).",
+   "If prompted, re-enter the password; clear old entries in Credential Manager first."
+  ],
+  "notes": "If web mail is also missing messages, treat as a mail-flow incident and check the email server status (see KB0010003).",
+  "related_tickets": [
+   "INC0010069",
+   "INC0010111",
+   "INC0010128",
+   "INC0010130",
+   "INC0010147"
+  ]
+ },
+ {
+  "number": "KB0010003",
+  "title": "Email server outage",
+  "category": "Email",
+  "assignment_group": "Messaging",
+  "matches": [
+   "Email server outage for all users"
+  ],
+  "symptoms": "Many users at once cannot send or receive email, in both Outlook and on the web.",
+  "cause": "Mail service outage, usually a failed transport node or an expired TLS certificate on the mail gateway.",
+  "resolution": [
+   "Raise a P1 major incident and post a status-page notice.",
+   "Check the mail gateway health dashboard and certificate expiry date.",
+   "Fail over to the secondary transport node if the primary is down.",
+   "Link all user reports to the major incident as child tickets instead of working them separately."
+  ],
+  "notes": "Messaging on-call owns this. Every duplicate report should reference the parent P1.",
+  "related_tickets": [
+   "INC0010113",
+   "INC0010114",
+   "INC0010115",
+   "INC0010120",
+   "INC0010126"
+  ]
+ },
+ {
+  "number": "KB0010004",
+  "title": "SAP portal login fails (error 403)",
+  "category": "Application",
+  "assignment_group": "SAP Support",
+  "matches": [
+   "Unable to login to SAP portal",
+   "SAP portal login fails with error 403"
+  ],
+  "symptoms": "User gets error 403 or 'not authorized' when signing in to the SAP portal.",
+  "cause": "The user's SAP role assignment expired, or the SSO token is cached from an old session.",
+  "resolution": [
+   "Ask the user to sign in from a private browser window. If that works, clear browser cookies for the portal domain.",
+   "If it still fails, check the user in SU01 for locked status and role validity dates.",
+   "Extend or reassign the expired role (needs manager approval for new roles).",
+   "Ask the user to sign out and back in after 10 minutes for the role to sync."
+  ],
+  "notes": "Locked accounts after 5 failed attempts are unlocked by the service desk; role changes go to SAP Support.",
+  "related_tickets": [
+   "INC0010104"
+  ]
+ },
+ {
+  "number": "KB0010005",
+  "title": "SAP report export to Excel not working",
+  "category": "Application",
+  "assignment_group": "SAP Support",
+  "matches": [
+   "SAP report export to Excel not working"
+  ],
+  "symptoms": "Export to spreadsheet in SAP GUI does nothing or opens an empty file.",
+  "cause": "SAP GUI security settings block the Excel macro, or the export format default is set to an old XLS template.",
+  "resolution": [
+   "In SAP GUI, Options > Security > Security Settings, set the rule for the export path to Allow.",
+   "In the report, choose List > Export > Spreadsheet, then pick 'Excel (in Office 2007 XLSX format)' and tick 'Always use selected format'.",
+   "Update SAP GUI to the approved version if it is older than 7.70."
+  ],
+  "notes": "",
+  "related_tickets": [
+   "INC0010059",
+   "INC0010064",
+   "INC0010066",
+   "INC0010079",
+   "INC0010080"
+  ]
+ },
+ {
+  "number": "KB0010006",
+  "title": "Payroll application down",
+  "category": "Application",
+  "assignment_group": "HR Systems",
+  "matches": [
+   "Payroll application down for all users"
+  ],
+  "symptoms": "Payroll application shows a server error or will not load for everyone.",
+  "cause": "Usually the application server hit its database connection limit during a payroll run, or a scheduled patch did not finish.",
+  "resolution": [
+   "Raise a P1 and inform HR leadership; payroll deadlines may be affected.",
+   "Check the app server and database connection pool in monitoring.",
+   "Restart the application service in the documented order (app, then integration service).",
+   "Confirm with one HR user that they can sign in, then link duplicate reports to the P1."
+  ],
+  "notes": "HR Systems on-call owns this.",
+  "related_tickets": [
+   "INC0010077",
+   "INC0010112"
+  ]
+ },
+ {
+  "number": "KB0010007",
+  "title": "Workday password reset and timesheet page",
+  "category": "Application",
+  "assignment_group": "HR Systems",
+  "matches": [
+   "Workday password reset request",
+   "Workday timesheet page not loading"
+  ],
+  "symptoms": "User cannot sign in to Workday, or the timesheet page spins without loading.",
+  "cause": "Workday uses company SSO, so password problems are usually the main company password. Timesheet hangs are a browser cache issue after a Workday release.",
+  "resolution": [
+   "For sign-in: reset the company password through the self-service reset portal, then sign in to Workday through SSO.",
+   "For the timesheet page: clear cache and cookies for the Workday domain, or try a private window.",
+   "If only one user is affected after both steps, collect a screenshot and the time it happened, and route to HR Systems."
+  ],
+  "notes": "",
+  "related_tickets": [
+   "INC0010078",
+   "INC0010096",
+   "INC0010117",
+   "INC0010129",
+   "INC0010152"
+  ]
+ },
+ {
+  "number": "KB0010008",
+  "title": "Laptop slow after Windows update",
+  "category": "Hardware",
+  "assignment_group": "Desktop Support",
+  "matches": [
+   "Laptop running very slow after Windows update"
+  ],
+  "symptoms": "Laptop is very slow, fan running, for hours after a Windows update.",
+  "cause": "Post-update tasks (search indexing, .NET optimization, antivirus full scan) run together, often on laptops with under 8 GB RAM.",
+  "resolution": [
+   "Restart the laptop twice to let pending update steps finish.",
+   "Open Task Manager and check what is using CPU and disk. Leave indexing and scans to finish if they are running.",
+   "Run `sfc /scannow` as admin if slowness lasts more than a day.",
+   "If RAM is under 8 GB, raise a hardware upgrade request."
+  ],
+  "notes": "",
+  "related_tickets": []
+ },
+ {
+  "number": "KB0010009",
+  "title": "Printer on 3rd floor not printing",
+  "category": "Hardware",
+  "assignment_group": "Desktop Support",
+  "matches": [
+   "Printer on 3rd floor not printing"
+  ],
+  "symptoms": "Jobs sit in the queue and nothing prints on the 3rd floor printer.",
+  "cause": "A stuck job in the print server queue, or the printer has dropped off the network after a power cycle.",
+  "resolution": [
+   "Check the printer's display for paper jams or errors.",
+   "On the print server, open the queue for the printer and delete the stuck first job.",
+   "Ping the printer's IP. If there is no reply, power cycle it and check the network cable.",
+   "Send a test page."
+  ],
+  "notes": "",
+  "related_tickets": [
+   "INC0010061",
+   "INC0010105",
+   "INC0010149"
+  ]
+ },
+ {
+  "number": "KB0010010",
+  "title": "Shared drive access denied",
+  "category": "Access",
+  "assignment_group": "Identity & Access",
+  "matches": [
+   "Shared drive access denied for finance folder",
+   "Access request for Salesforce reports"
+  ],
+  "symptoms": "User gets 'Access denied' on a shared folder or report they need.",
+  "cause": "The user isn't in the security group that grants access, or was added recently and hasn't signed out since.",
+  "resolution": [
+   "Check which group grants access to the folder or report.",
+   "If the user should have access, get approval from the data owner, then add them to the group.",
+   "Ask the user to sign out and back in (or lock and unlock) so the new group membership applies."
+  ],
+  "notes": "Never grant access to individuals directly; always through a group.",
+  "related_tickets": [
+   "INC0010053",
+   "INC0010095",
+   "INC0010108",
+   "INC0010139",
+   "INC0010141"
+  ]
+ },
+ {
+  "number": "KB0010011",
+  "title": "Microsoft Teams audio, calls and screen sharing",
+  "category": "Collaboration",
+  "assignment_group": "Messaging",
+  "matches": [
+   "Teams meeting audio not working",
+   "Teams calls dropping after 5 minutes",
+   "Teams screen sharing not working"
+  ],
+  "symptoms": "No audio in Teams meetings, calls drop after a few minutes, or screen sharing shows a black screen.",
+  "cause": "Wrong audio device selected, an outdated Teams client, or the VPN routing Teams traffic through the tunnel.",
+  "resolution": [
+   "In Teams, Settings > Devices, pick the right speaker and microphone and make a test call.",
+   "Update Teams (profile menu > Check for updates) and restart it.",
+   "Clear the Teams cache: quit Teams, delete the contents of %APPDATA%\\Microsoft\\Teams, and reopen.",
+   "If calls drop only on VPN, confirm split tunnelling for Teams is on (see KB0010001)."
+  ],
+  "notes": "",
+  "related_tickets": [
+   "INC0010090",
+   "INC0010106",
+   "INC0010124",
+   "INC0010146",
+   "INC0010148"
+  ]
+ },
+ {
+  "number": "KB0010012",
+  "title": "Website checkout returns error 500",
+  "category": "Web",
+  "assignment_group": "E-commerce Platform",
+  "matches": [
+   "Checkout page returning 500 error",
+   "Website checkout page throws 500 error on payment"
+  ],
+  "symptoms": "Customers see error 500 at checkout or when paying.",
+  "cause": "Usually the payment provider's API is timing out, or a recent deployment broke the checkout service.",
+  "resolution": [
+   "Raise a P1; this affects revenue.",
+   "Check the payment provider's status page and the checkout service error logs.",
+   "If a deployment went out in the last 2 hours, roll it back.",
+   "Link customer and internal reports to the P1 as duplicates."
+  ],
+  "notes": "E-commerce on-call owns this.",
+  "related_tickets": [
+   "INC0010062",
+   "INC0010068",
+   "INC0010136",
+   "INC0010138"
+  ]
+ },
+ {
+  "number": "KB0010013",
+  "title": "Nightly database backup job failed",
+  "category": "Database",
+  "assignment_group": "DBA Team",
+  "matches": [
+   "Nightly database backup job failed",
+   "Database backup job failed overnight"
+  ],
+  "symptoms": "The nightly backup job ends with a failed status.",
+  "cause": "The backup volume is full, or a long-running query held a lock past the backup window.",
+  "resolution": [
+   "Check free space on the backup volume; remove backups older than the retention period.",
+   "Check the job log for lock timeout errors and find the blocking session.",
+   "Rerun the backup manually and confirm it completes.",
+   "If it fails two nights in a row, raise the priority to P2."
+  ],
+  "notes": "",
+  "related_tickets": [
+   "INC0010125",
+   "INC0010127",
+   "INC0010132",
+   "INC0010133",
+   "INC0010142"
+  ]
+ }
+]

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How it works · AI Incident Analyzer</title>
+<meta name="description" content="How the AI Incident Analyzer matches tickets and groups status.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/css/tokens.css">
+<link rel="stylesheet" href="/assets/css/about.css">
+</head>
+<body>
+<nav class="site-nav" aria-label="Site">
+  <div class="site-nav-in">
+    <a class="site-brand" href="/"><i></i>AI Incident Analyzer</a>
+    <div class="site-links">
+      <a href="/">Dashboard</a>
+      <a href="/known-issues">Known issues</a>
+      <a href="/about" aria-current="page">How it works</a>
+    </div>
+  </div>
+</nav>
+<main class="page">
+  <header>
+    <h1>How it works</h1>
+    <p class="lede">The AI Incident Analyzer lists ServiceNow incidents by priority, flags duplicate and similar tickets, and charts ticket status by week. It runs on 67 incidents exported from the ServiceNow developer instance dev460097 on Oct 29, 2026.</p>
+  </header>
+  <div class="doc">
+    <section>
+      <h2>Architecture</h2>
+      <p>All figures come from one dataset, so every page agrees. The site is static: plain HTML, CSS and JavaScript with d3 v7.9.0, served by Vercel with no build step.</p>
+      <div class="flow"><span>ServiceNow CSV export</span><b>→</b><span><code>data/incidents.js</code></span><b>→</b><span>Calculations (similarity, summary, weekly)</span><b>→</b><span>Dashboard and Known issues pages</span></div>
+    </section>
+
+    <section>
+      <h2>Data model</h2>
+      <p>Each ticket keeps seven fields from the ServiceNow <code>incident</code> table. Caller and assignee names are left out because the site does not use them.</p>
+      <div class="tbl"><table>
+        <thead><tr><th>Field</th><th>ServiceNow column</th><th>Example</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Number</td><td><code>number</code></td><td>INC0009005</td><td>Unique key for each row</td></tr>
+          <tr><td>Short description</td><td><code>short_description</code></td><td>Email server is down.</td><td>Used for duplicate matching</td></tr>
+          <tr><td>Priority</td><td><code>priority</code></td><td>P1</td><td>Mapped from ServiceNow labels (below)</td></tr>
+          <tr><td>State</td><td><code>state</code></td><td>In Progress</td><td>Grouped into four statuses (below)</td></tr>
+          <tr><td>Category</td><td><code>category</code></td><td>Software</td><td>Can be blank</td></tr>
+          <tr><td>Assignment group</td><td><code>assignment_group</code></td><td>Service Desk</td><td>Can be blank</td></tr>
+          <tr><td>Opened</td><td><code>opened_at</code></td><td>2018-08-31 21:35:21</td><td>Drives sorting, date filters and weeks</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Priority mapping</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>ServiceNow priority</th><th>Shown as</th><th>Tickets in export</th></tr></thead>
+        <tbody>
+          <tr><td>1 - Critical</td><td>P1</td><td>27</td></tr>
+          <tr><td>2 - High</td><td>P2</td><td>4</td></tr>
+          <tr><td>3 - Moderate</td><td>P3</td><td>12</td></tr>
+          <tr><td>4 - Low</td><td>P4</td><td>21</td></tr>
+          <tr><td>5 - Planning</td><td>P5</td><td>3</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Status groups</h3>
+      <div class="tbl"><table>
+        <thead><tr><th>Status</th><th>ServiceNow states</th><th>Tickets in export</th></tr></thead>
+        <tbody>
+          <tr><td>New</td><td>New</td><td>13</td></tr>
+          <tr><td>In Progress</td><td>In Progress</td><td>20</td></tr>
+          <tr><td>Pending</td><td>On Hold</td><td>7</td></tr>
+          <tr><td>Resolved</td><td>Resolved, Closed</td><td>27</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section>
+      <h2>Features</h2>
+      <p><strong>Summary tiles.</strong> All tickets, New, In Progress, Pending and Resolved counts, plus a one-line takeaway of tickets waiting on the team.</p>
+      <p><strong>Tickets tab.</strong> Every incident in one table, sorted P1 to P5, newest first within each priority. Filters: From and To dates (on Opened), Show (one status group) and a free-text Search over number, description, group and reference ticket. Reset clears them all.</p>
+      <p><strong>Duplicate and Similar matching.</strong> Each ticket is compared with every earlier ticket:</p>
+      <ol>
+        <li>The short description is lower-cased, punctuation removed, and common words (the, to, on, is…) dropped. Endings "-ing" and "-s" are trimmed so "emails" matches "email".</li>
+        <li>Similarity is the share of words two tickets have in common (shared words divided by all distinct words in both).</li>
+        <li>The earlier ticket with the highest score becomes the Reference ticket.</li>
+        <li><strong>Duplicate:</strong> 70% or more alike and opened within 3 days of the reference. <strong>Similar:</strong> 30% or more alike, at any distance. Below 30% the Match column is blank.</li>
+      </ol>
+      <p>Clicking a reference ticket scrolls the table to that ticket.</p>
+      <p><strong>Status of tickets tab.</strong> A stacked bar chart of tickets opened each week, split by their status today (Resolved, Pending, In Progress, New).</p>
+      <ul>
+        <li>Weeks are weeks of the month: week 1 is days 1 to 7, week 2 days 8 to 14, week 3 days 15 to 21, week 4 days 22 to 28, week 5 the rest of the month.</li>
+        <li><strong>Year</strong> defaults to the latest year with tickets. <strong>Month</strong> narrows to one month. <strong>Week</strong> shows only that week, in every month shown.</li>
+        <li>Weeks with no tickets show as empty, so gaps are visible.</li>
+        <li>Hovering a bar shows its counts and date span.</li>
+      </ul>
+      <p><strong>Known issues.</strong> Thirteen resolution articles (KB0010001 to KB0010013) with symptoms, cause and resolution steps. Each article lists the tickets in the export whose description is 30% or more alike, using the same matching.</p>
+    </section>
+
+    <section>
+      <h2>ServiceNow integration</h2>
+      <p>The data is a CSV snapshot. A live ServiceNow connection is not working yet, so the site is refreshed from a new export.</p>
+      <h3>Refreshing the data</h3>
+      <ol>
+        <li>Open <code>https://dev460097.service-now.com/incident_list.do?CSV</code> (or open <code>incident_list.do</code> and use Export &gt; CSV from a column header menu).</li>
+        <li>Convert it to the seven fields above, priority mapped to P1 to P5 and caller and assignee names dropped, and replace <code>data/incidents.js</code> and <code>data/incidents.json</code>.</li>
+        <li>Push to <code>main</code>. Vercel redeploys on its own.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Next steps</h2>
+      <ul>
+        <li>Get the ServiceNow connection working, then switch to a live query.</li>
+        <li>Choose where the known-issue articles are stored for retrieval (RAG).</li>
+        <li>Link each ticket to the closest known-issue article on the Tickets tab.</li>
+      </ul>
+    </section>
+  </div>
+</main>
+<footer class="site-foot">Data: ServiceNow incident export from dev460097, Oct 29, 2026 (67 incidents). Caller and assignee names are left out.</footer>
+</body>
+</html>

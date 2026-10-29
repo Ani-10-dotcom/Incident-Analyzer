@@ -1,0 +1,14 @@
+.doc { display: grid; gap: var(--cds-gap-lg); max-width: 60rem; }
+.doc section { display: grid; gap: var(--cds-gap-sm); }
+.doc h2 { font-size: var(--cds-font-size-heading); color: var(--ia-all); margin: 0; }
+.doc h3 { font-size: var(--cds-font-size-body); margin: var(--cds-gap-sm) 0 0; }
+.doc p, .doc ol, .doc ul { margin: 0; }
+.doc ol, .doc ul { padding-left: 1.3rem; display: grid; gap: var(--cds-gap-xs); }
+.tbl { overflow-x: auto; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); }
+.tbl table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-caption); font-variant-numeric: tabular-nums; }
+.tbl th { text-align: left; background: color-mix(in srgb, var(--ia-all) 10%, var(--color-panel)); color: var(--color-fg-muted); font-weight: var(--cds-font-weight-medium); }
+.tbl th, .tbl td { padding: var(--cds-pad-sm); border-bottom: 1px solid var(--color-border-line); vertical-align: top; }
+.tbl tr:last-child td { border-bottom: 0; }
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm); }
+.flow span { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-sm) var(--cds-pad-md); }
+.flow b { color: var(--color-fg-muted); font-weight: 400; }

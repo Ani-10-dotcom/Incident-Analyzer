@@ -1,0 +1,48 @@
+  :root {
+    --font-anthropic-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-anthropic-serif: Georgia, "Times New Roman", serif;
+    --color-fg: #1f1e1c; --color-fg-muted: #6b675f; --color-bg: #faf9f6; --color-panel: #ffffff;
+    --color-border-line: #e3e0d8; --color-ok: #23a06b; --color-warn: #c77c12; --color-bad: #c8423a;
+    --cds-text-secondary: #6b675f; --cds-chart-grid: #ece9e2; --cds-chart-axis: #b9b4a8;
+    --cds-surface-popover: #ffffff; --cds-shadow-popover: 0 4px 16px rgba(0,0,0,.12); --cds-border: #e3e0d8;
+    --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 12px; --cds-gap-lg: 20px;
+    --cds-pad-xs: 4px; --cds-pad-sm: 8px; --cds-pad-md: 12px; --cds-pad-lg: 20px;
+    --cds-font-size-caption: 12.5px; --cds-font-size-body: 14px; --cds-font-size-heading: 17px; --cds-font-size-title: 30px;
+    --cds-font-weight-medium: 600; --cds-radius: 10px; --cds-dur-slow: .3s;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --color-fg: #ecebe7; --color-fg-muted: #a6a39b; --color-bg: #1c1b19; --color-panel: #262522;
+    --color-border-line: #3a3834; --color-ok: #4cc490; --color-warn: #f0a94e; --color-bad: #ee6b62;
+    --cds-text-secondary: #a6a39b; --cds-chart-grid: #34322e; --cds-chart-axis: #6b675f;
+    --cds-surface-popover: #2e2d2a; --cds-border: #3a3834;
+  } }
+  :root[data-theme="dark"] {
+    --color-fg: #ecebe7; --color-fg-muted: #a6a39b; --color-bg: #1c1b19; --color-panel: #262522;
+    --color-border-line: #3a3834; --color-ok: #4cc490; --color-warn: #f0a94e; --color-bad: #ee6b62;
+    --cds-text-secondary: #a6a39b; --cds-chart-grid: #34322e; --cds-chart-axis: #6b675f;
+    --cds-surface-popover: #2e2d2a; --cds-border: #3a3834;
+  }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--color-bg); color: var(--color-fg); }
+  #dash-root { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; box-sizing: border-box; }
+
+  /* Site shell shared by every page */
+  :root { --ia-all: #6b5bd6; --ia-new: #2f7fd8; --ia-res: #23a06b; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ia-all: #9d90f0; --ia-new: #6aaef0; --ia-res: #4cc490; } }
+  :root[data-theme="dark"] { --ia-all: #9d90f0; --ia-new: #6aaef0; --ia-res: #4cc490; }
+  body { font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-body); line-height: 1.5; }
+  .site-nav { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--color-panel) 92%, transparent); backdrop-filter: blur(6px); border-bottom: 1px solid var(--color-border-line); }
+  .site-nav-in { max-width: 1200px; margin: 0 auto; padding: 0 16px; display: flex; align-items: center; gap: var(--cds-gap-lg); min-height: 3.25rem; flex-wrap: wrap; }
+  .site-brand { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-heading); color: var(--color-fg); text-decoration: none; display: inline-flex; align-items: center; gap: var(--cds-gap-sm); }
+  .site-brand i { width: .8rem; height: .8rem; border-radius: 3px; background: linear-gradient(135deg, var(--ia-all), var(--ia-new) 60%, var(--ia-res)); display: inline-block; }
+  .site-links { display: flex; gap: var(--cds-gap-xs); margin-left: auto; flex-wrap: wrap; }
+  .site-links a { color: var(--color-fg-muted); text-decoration: none; padding: var(--cds-pad-xs) var(--cds-pad-sm); border-radius: var(--cds-radius); }
+  .site-links a:hover { color: var(--color-fg); background: color-mix(in srgb, var(--ia-all) 8%, transparent); }
+  .site-links a[aria-current="page"] { color: var(--ia-all); font-weight: var(--cds-font-weight-medium); background: color-mix(in srgb, var(--ia-all) 12%, transparent); }
+  .site-foot { max-width: 1200px; margin: 0 auto; padding: 0 16px 32px; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); box-sizing: border-box; }
+  .page { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--cds-gap-lg); }
+  .page h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; }
+  .lede { color: var(--color-fg-muted); margin: 0; max-width: 60rem; }
+  .card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em; background: color-mix(in srgb, var(--color-fg-muted) 12%, transparent); padding: 0 .25em; border-radius: 4px; overflow-wrap: anywhere; }
+  a { color: var(--ia-all); }
