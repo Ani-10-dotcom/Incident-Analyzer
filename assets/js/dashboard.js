@@ -126,6 +126,23 @@
   monthEl.addEventListener('change', () => dash.setParams({ month: monthEl.value || null }));
   wkEl.addEventListener('change', () => dash.setParams({ wk: wkEl.value || null }));
 
+  // Export CSV downloads the weeks the chart shows, so it follows Year, Month and Week.
+  const exportBtn = root.querySelector('.ia-export');
+  let shownWeeks = null;
+  const csvCell = (v) => (/[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
+  exportBtn.addEventListener('click', () => {
+    if (!shownWeeks || !shownWeeks.rows.length) return;
+    const lastDayOf = (d) => (d.wk < 5 ? d.wk * 7 : new Date(Date.UTC(Number(d.year), Number(d.month), 0)).getUTCDate());
+    const iso = (d, day) => `${d.year}-${d.month}-${String(day).padStart(2, '0')}`;
+    const lines = [['Year', 'Month', 'Week', 'From', 'To', 'New', 'In Progress', 'Pending', 'Resolved', 'Total']]
+      .concat(shownWeeks.rows.map((d) => [d.year, monthName(d.month), `Week ${d.wk}`, iso(d, d.wk * 7 - 6), iso(d, lastDayOf(d)), d.new, d.in_progress, d.pending, d.resolved, d.new + d.in_progress + d.pending + d.resolved]))
+      .map((r) => r.map(csvCell).join(','));
+    const name = ['weekly-status', shownWeeks.year, shownWeeks.month && monthName(shownWeeks.month).toLowerCase(), shownWeeks.wk && 'week-' + shownWeeks.wk].filter(Boolean).join('-') + '.csv';
+    const url = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
   window.iaDrawChart = function drawChart() {
     if (document.getElementById('status').hidden) return;
     const w = dash.data('weekly');
@@ -147,6 +164,8 @@
     const data = months.filter((m) => !monthEl.value || m === monthEl.value)
       .flatMap((m) => [1, 2, 3, 4, 5].map((wk) => byWeek.get(`${year}-${m}-W${wk}`) || { week: `${year}-${m}-W${wk}`, year, month: m, wk, new: 0, in_progress: 0, pending: 0, resolved: 0 }))
       .filter((r) => !wkEl.value || String(r.wk) === wkEl.value);
+    shownWeeks = { year, month: monthEl.value, wk: wkEl.value, rows: data };
+    exportBtn.disabled = !data.length;
     chartEl.replaceChildren();
     if (!data.length) { const n = document.createElement('div'); n.className = 'ia-empty'; n.textContent = 'No tickets were opened in this week.'; chartEl.append(n); return; }
     const width = chartEl.clientWidth || 600, height = 320;

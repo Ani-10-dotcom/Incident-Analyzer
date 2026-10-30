@@ -91,3 +91,5 @@
   .tk-fix ol { margin: 0; padding-left: 1.2rem; display: grid; gap: var(--cds-gap-xs); font-size: var(--cds-font-size-body); }
   .tk-foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--cds-gap-sm) var(--cds-gap-md); }
   .tk-sn { text-decoration: none; display: inline-flex; align-items: center; }
+  .ia-export { margin-left: auto; }
+  .ia-export:disabled { opacity: .5; cursor: not-allowed; }
