@@ -84,7 +84,7 @@
 
   <section id="status" class="ia-card" role="tabpanel" aria-labelledby="tab-status" hidden>
     <h2>New, in progress, pending and resolved tickets by week</h2>
-    <p class="ia-note">Tickets opened each week of the month, split by their status today. Week 1 is days 1 to 7, week 2 days 8 to 14, week 3 days 15 to 21, week 4 days 22 to 28 and week 5 the rest of the month. From and To limit the tickets counted to those opened between the two dates; Year, Month and Week narrow it further. The exports follow every filter.</p>
+    <p class="ia-note">Tickets opened each week of the month, split by their status today. Week 1 is days 1 to 7, week 2 days 8 to 14, week 3 days 15 to 21, week 4 days 22 to 28 and week 5 the rest of the month. From and To limit the tickets counted to those opened between the two dates; Year, Month and Week narrow it further. Export CSV downloads the tickets shown, following every filter.</p>
     <div class="ia-filters">
       <label>From<input class="ia-sfrom" id="ia-sfrom" type="date" min="2000-01-01" max="2099-12-31"></label>
       <label>To<input class="ia-sto" id="ia-sto" type="date" min="2000-01-01" max="2099-12-31"></label>
@@ -100,9 +100,7 @@
       </select></label>
       <button class="ia-btn ia-sreset" type="button">Reset</button>
       <span class="ia-exports">
-        <button class="ia-btn ia-reset ia-export" data-export="xlsx" type="button" title="Excel file with a Weekly totals sheet and a Tickets sheet, following the filters">Export to Excel</button>
-        <button class="ia-btn ia-export" data-export="tickets" type="button" title="One row per ticket in the weeks and dates shown">Tickets CSV</button>
-        <button class="ia-btn ia-export" data-export="weekly" type="button" title="One row per week with New, In Progress, Pending, Resolved and Total">Weekly totals CSV</button>
+        <button class="ia-btn ia-reset ia-export" type="button" title="One row per ticket in the dates and weeks shown">Export CSV</button>
       </span>
     </div>
     <div class="ia-legend" id="status-legend" data-source="weekly"><span><i class="sw-res"></i>Resolved</span><span><i class="sw-prog"></i>In Progress</span><span><i class="sw-pend"></i>Pending</span><span><i class="sw-new"></i>New</span></div>
@@ -117,7 +115,6 @@
 </dialog>
 <footer class="site-foot">Data: ServiceNow incident export from dev460097, Oct 29, 2026 (67 incidents). Caller and assignee names are left out.</footer>
 <script src="/assets/js/calcs.js"></script>
-<script src="/assets/js/xlsx-lite.js"></script>
 <script src="/assets/js/dashboard.js"></script>
 <script src="/assets/js/ticket.js"></script>
 </body>
