@@ -126,22 +126,36 @@
   monthEl.addEventListener('change', () => dash.setParams({ month: monthEl.value || null }));
   wkEl.addEventListener('change', () => dash.setParams({ wk: wkEl.value || null }));
 
-  // Export CSV downloads the weeks the chart shows, so it follows Year, Month and Week.
-  const exportBtn = root.querySelector('.ia-export');
+  // Export buttons download the weeks the chart shows, so they follow Year, Month and Week:
+  // tickets = one row per ticket opened in those weeks, weekly = one row per week with counts.
+  const exportBtns = [...root.querySelectorAll('.ia-export')];
   let shownWeeks = null;
-  const csvCell = (v) => (/[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : String(v));
-  exportBtn.addEventListener('click', () => {
-    if (!shownWeeks || !shownWeeks.rows.length) return;
-    const lastDayOf = (d) => (d.wk < 5 ? d.wk * 7 : new Date(Date.UTC(Number(d.year), Number(d.month), 0)).getUTCDate());
-    const iso = (d, day) => `${d.year}-${d.month}-${String(day).padStart(2, '0')}`;
-    const lines = [['Year', 'Month', 'Week', 'From', 'To', 'New', 'In Progress', 'Pending', 'Resolved', 'Total']]
-      .concat(shownWeeks.rows.map((d) => [d.year, monthName(d.month), `Week ${d.wk}`, iso(d, d.wk * 7 - 6), iso(d, lastDayOf(d)), d.new, d.in_progress, d.pending, d.resolved, d.new + d.in_progress + d.pending + d.resolved]))
-      .map((r) => r.map(csvCell).join(','));
-    const name = ['weekly-status', shownWeeks.year, shownWeeks.month && monthName(shownWeeks.month).toLowerCase(), shownWeeks.wk && 'week-' + shownWeeks.wk].filter(Boolean).join('-') + '.csv';
-    const url = URL.createObjectURL(new Blob(['\ufeff' + lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
+  const csvCell = (v) => (/[",\r\n]/.test(String(v ?? '')) ? `"${String(v).replace(/"/g, '""')}"` : String(v ?? ''));
+  const lastDayOf = (d) => (d.wk < 5 ? d.wk * 7 : new Date(Date.UTC(Number(d.year), Number(d.month), 0)).getUTCDate());
+  const iso = (d, day) => `${d.year}-${d.month}-${String(day).padStart(2, '0')}`;
+  const weekCols = (d) => [d.year, monthName(d.month), `Week ${d.wk}`, iso(d, d.wk * 7 - 6), iso(d, lastDayOf(d))];
+  const download = (name, rows) => {
+    const url = URL.createObjectURL(new Blob(['\ufeff' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a'); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  });
+  };
+  exportBtns.forEach((btn) => btn.addEventListener('click', () => {
+    if (!shownWeeks || !shownWeeks.rows.length) return;
+    const kind = btn.dataset.export;
+    const name = [kind === 'tickets' ? 'tickets' : 'weekly-status', shownWeeks.year, shownWeeks.month && monthName(shownWeeks.month).toLowerCase(), shownWeeks.wk && 'week-' + shownWeeks.wk].filter(Boolean).join('-') + '.csv';
+    if (kind === 'weekly') {
+      download(name, [['Year', 'Month', 'Week', 'From', 'To', 'New', 'In Progress', 'Pending', 'Resolved', 'Total']]
+        .concat(shownWeeks.rows.map((d) => [...weekCols(d), d.new, d.in_progress, d.pending, d.resolved, d.new + d.in_progress + d.pending + d.resolved])));
+      return;
+    }
+    const weeks = new Map(shownWeeks.rows.map((d) => [d.week, d]));
+    const weekOf = (r) => { const day = String(r.opened_at).slice(0, 10); return `${day.slice(0, 7)}-W${Math.min(5, Math.ceil(Number(day.slice(8, 10)) / 7))}`; };
+    const tickets = (dash.data('incidents').data || [])
+      .filter((r) => weeks.has(weekOf(r)))
+      .sort((x, y) => String(x.opened_at).localeCompare(String(y.opened_at)));
+    download(name, [['Year', 'Month', 'Week', 'Week from', 'Week to', 'Number', 'Short description', 'Priority', 'Status', 'State', 'Category', 'Assignment group', 'Opened']]
+      .concat(tickets.map((r) => [...weekCols(weeks.get(weekOf(r))), r.number, String(r.short_description).trim(), r.priority, statusGroup(r.state), r.state, r.category, r.assignment_group, r.opened_at])));
+  }));
 
   window.iaDrawChart = function drawChart() {
     if (document.getElementById('status').hidden) return;
@@ -165,7 +179,7 @@
       .flatMap((m) => [1, 2, 3, 4, 5].map((wk) => byWeek.get(`${year}-${m}-W${wk}`) || { week: `${year}-${m}-W${wk}`, year, month: m, wk, new: 0, in_progress: 0, pending: 0, resolved: 0 }))
       .filter((r) => !wkEl.value || String(r.wk) === wkEl.value);
     shownWeeks = { year, month: monthEl.value, wk: wkEl.value, rows: data };
-    exportBtn.disabled = !data.length;
+    exportBtns.forEach((b) => { b.disabled = !data.length; });
     chartEl.replaceChildren();
     if (!data.length) { const n = document.createElement('div'); n.className = 'ia-empty'; n.textContent = 'No tickets were opened in this week.'; chartEl.append(n); return; }
     const width = chartEl.clientWidth || 600, height = 320;
