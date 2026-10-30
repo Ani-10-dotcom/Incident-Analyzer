@@ -122,66 +122,101 @@
   const monthEl = document.getElementById('ia-month');
   const wkEl = document.getElementById('ia-wk');
   const monthName = (m) => ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][Number(m) - 1];
+  const sfromEl = document.getElementById('ia-sfrom');
+  const stoEl = document.getElementById('ia-sto');
   yearEl.addEventListener('change', () => dash.setParams({ year: yearEl.value || null, month: null }));
   monthEl.addEventListener('change', () => dash.setParams({ month: monthEl.value || null }));
   wkEl.addEventListener('change', () => dash.setParams({ wk: wkEl.value || null }));
+  sfromEl.addEventListener('change', () => setDate(sfromEl, 'sfrom'));
+  stoEl.addEventListener('change', () => setDate(stoEl, 'sto'));
+  sfromEl.addEventListener('blur', () => { sfromEl.value = dash.params().sfrom ?? ''; });
+  stoEl.addEventListener('blur', () => { stoEl.value = dash.params().sto ?? ''; });
+  root.querySelector('.ia-sreset').addEventListener('click', () => dash.setParams({ sfrom: null, sto: null, year: null, month: null, wk: null }));
 
-  // Export buttons download the weeks the chart shows, so they follow Year, Month and Week:
-  // tickets = one row per ticket opened in those weeks, weekly = one row per week with counts.
-  const exportBtns = [...root.querySelectorAll('.ia-export')];
-  let shownWeeks = null;
-  const csvCell = (v) => (/[",\r\n]/.test(String(v ?? '')) ? `"${String(v).replace(/"/g, '""')}"` : String(v ?? ''));
+  // Same rules as the weekly calc: week of the month (days 1-7 = week 1 ... 29+ = week 5) and four status groups.
+  const weekKey = (r) => { const day = String(r.opened_at).slice(0, 10); return `${day.slice(0, 7)}-W${Math.min(5, Math.ceil(Number(day.slice(8, 10)) / 7))}`; };
+  const countKey = { Resolved: 'resolved', New: 'new', 'In Progress': 'in_progress', Pending: 'pending' };
   const lastDayOf = (d) => (d.wk < 5 ? d.wk * 7 : new Date(Date.UTC(Number(d.year), Number(d.month), 0)).getUTCDate());
   const iso = (d, day) => `${d.year}-${d.month}-${String(day).padStart(2, '0')}`;
-  const weekCols = (d) => [d.year, monthName(d.month), `Week ${d.wk}`, iso(d, d.wk * 7 - 6), iso(d, lastDayOf(d))];
-  const download = (name, rows) => {
-    const url = URL.createObjectURL(new Blob(['\ufeff' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
+
+  // Export buttons download exactly what the chart shows: the weeks on screen and, within them,
+  // the tickets opened between From and To.
+  const exportBtns = [...root.querySelectorAll('.ia-export')];
+  let shown = null;
+  const csvCell = (v) => (/[",\r\n]/.test(String(v ?? '')) ? `"${String(v).replace(/"/g, '""')}"` : String(v ?? ''));
+  const save = (name, blob) => {
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
+  const weekCols = [{ name: 'Year', width: 7, type: 'number' }, { name: 'Month', width: 11 }, { name: 'Week', width: 8 }, { name: 'Week from', width: 12, type: 'date' }, { name: 'Week to', width: 12, type: 'date' }];
+  const weeklySheet = () => ({
+    name: 'Weekly totals',
+    columns: [...weekCols, ...['New', 'In Progress', 'Pending', 'Resolved', 'Total'].map((n) => ({ name: n, width: 11, type: 'number' }))],
+    rows: shown.rows.map((d) => [d.year, monthName(d.month), `Week ${d.wk}`, iso(d, d.wk * 7 - 6), iso(d, lastDayOf(d)), d.new, d.in_progress, d.pending, d.resolved, d.new + d.in_progress + d.pending + d.resolved]),
+  });
+  const ticketSheet = () => {
+    const weeks = new Map(shown.rows.map((d) => [d.week, d]));
+    const list = shown.tickets.filter((r) => weeks.has(weekKey(r))).sort((x, y) => String(x.opened_at).localeCompare(String(y.opened_at)));
+    return {
+      name: 'Tickets',
+      columns: [...weekCols, { name: 'Number', width: 13 }, { name: 'Short description', width: 52 }, { name: 'Priority', width: 9 }, { name: 'Status', width: 12 }, { name: 'State', width: 12 }, { name: 'Category', width: 18 }, { name: 'Assignment group', width: 18 }, { name: 'Opened', width: 20, type: 'datetime' }],
+      rows: list.map((r) => { const d = weeks.get(weekKey(r)); return [d.year, monthName(d.month), `Week ${d.wk}`, iso(d, d.wk * 7 - 6), iso(d, lastDayOf(d)), r.number, String(r.short_description).trim(), r.priority, statusGroup(r.state), r.state, r.category, r.assignment_group, r.opened_at]; }),
+    };
+  };
+  const filterSheet = () => ({
+    name: 'Filters',
+    columns: [{ name: 'Filter', width: 12 }, { name: 'Value', width: 40 }],
+    rows: [['From', shown.from || 'Any'], ['To', shown.to || 'Any'], ['Year', shown.year], ['Month', shown.month ? monthName(shown.month) : 'All months'], ['Week', shown.wk ? `Week ${shown.wk}` : 'All weeks'],
+      ['Source', 'ServiceNow incident export, dev460097, Oct 29, 2026'], ['Exported', new Date().toISOString().slice(0, 19).replace('T', ' ') + ' UTC']],
+  });
   exportBtns.forEach((btn) => btn.addEventListener('click', () => {
-    if (!shownWeeks || !shownWeeks.rows.length) return;
+    if (!shown || !shown.rows.length) return;
     const kind = btn.dataset.export;
-    const name = [kind === 'tickets' ? 'tickets' : 'weekly-status', shownWeeks.year, shownWeeks.month && monthName(shownWeeks.month).toLowerCase(), shownWeeks.wk && 'week-' + shownWeeks.wk].filter(Boolean).join('-') + '.csv';
-    if (kind === 'weekly') {
-      download(name, [['Year', 'Month', 'Week', 'From', 'To', 'New', 'In Progress', 'Pending', 'Resolved', 'Total']]
-        .concat(shownWeeks.rows.map((d) => [...weekCols(d), d.new, d.in_progress, d.pending, d.resolved, d.new + d.in_progress + d.pending + d.resolved])));
-      return;
-    }
-    const weeks = new Map(shownWeeks.rows.map((d) => [d.week, d]));
-    const weekOf = (r) => { const day = String(r.opened_at).slice(0, 10); return `${day.slice(0, 7)}-W${Math.min(5, Math.ceil(Number(day.slice(8, 10)) / 7))}`; };
-    const tickets = (dash.data('incidents').data || [])
-      .filter((r) => weeks.has(weekOf(r)))
-      .sort((x, y) => String(x.opened_at).localeCompare(String(y.opened_at)));
-    download(name, [['Year', 'Month', 'Week', 'Week from', 'Week to', 'Number', 'Short description', 'Priority', 'Status', 'State', 'Category', 'Assignment group', 'Opened']]
-      .concat(tickets.map((r) => [...weekCols(weeks.get(weekOf(r))), r.number, String(r.short_description).trim(), r.priority, statusGroup(r.state), r.state, r.category, r.assignment_group, r.opened_at])));
+    const tag = [shown.from && 'from-' + shown.from, shown.to && 'to-' + shown.to, shown.year, shown.month && monthName(shown.month).toLowerCase(), shown.wk && 'week-' + shown.wk].filter(Boolean).join('-');
+    if (kind === 'xlsx') { save(`incident-status-${tag}.xlsx`, xlsxLite.build([weeklySheet(), ticketSheet(), filterSheet()])); return; }
+    const sheet = kind === 'tickets' ? ticketSheet() : weeklySheet();
+    const lines = [sheet.columns.map((c) => c.name), ...sheet.rows].map((r) => r.map(csvCell).join(','));
+    save(`${kind === 'tickets' ? 'tickets' : 'weekly-status'}-${tag}.csv`, new Blob(['\ufeff' + lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' }));
   }));
 
   window.iaDrawChart = function drawChart() {
     if (document.getElementById('status').hidden) return;
-    const w = dash.data('weekly');
-    if (w.status === 'error') { failLine(chartEl); return; }
-    if (w.status !== 'ok') { chartEl.replaceChildren(); return; }
+    const inc = dash.data('incidents');
+    if (inc.status === 'error') { failLine(chartEl); return; }
+    if (inc.status !== 'ok') { chartEl.replaceChildren(); return; }
     const p = dash.params();
-    const years = [...new Set(w.data.map((r) => r.year))].sort().reverse();
+    if (sfromEl !== document.activeElement) sfromEl.value = p.sfrom ?? '';
+    if (stoEl !== document.activeElement) stoEl.value = p.sto ?? '';
+    // From / To limit the tickets; the chart is then built from just those tickets
+    const tickets = inc.data.filter((r) => { const day = String(r.opened_at).slice(0, 10); return (!p.sfrom || day >= p.sfrom) && (!p.sto || day <= p.sto); });
+    const counts = new Map();
+    for (const r of tickets) {
+      const key = weekKey(r);
+      const w = counts.get(key) || { new: 0, in_progress: 0, pending: 0, resolved: 0 };
+      w[countKey[statusGroup(r.state)]]++;
+      counts.set(key, w);
+    }
+    const years = [...new Set(tickets.map((r) => String(r.opened_at).slice(0, 4)))].sort().reverse();
     const year = years.includes(p.year) ? p.year : years[0];
-    yearEl.replaceChildren(...years.map((y) => new Option(y, y)));
+    yearEl.replaceChildren(...(years.length ? years.map((y) => new Option(y, y)) : [new Option('—', '')]));
     yearEl.value = year || '';
     // every week from the year's first month with tickets to its last, empty weeks shown as zero
-    const inYear = w.data.filter((r) => r.year === year);
-    const byWeek = new Map(inYear.map((r) => [r.week, r]));
-    const first = Number(d3.min(inYear, (r) => r.month) || 1), last = Number(d3.max(inYear, (r) => r.month) || 12);
-    const months = d3.range(first, last + 1).map((m) => String(m).padStart(2, '0'));
+    const inYear = tickets.filter((r) => String(r.opened_at).startsWith(year));
+    const first = Number(d3.min(inYear, (r) => String(r.opened_at).slice(5, 7)) || 1), last = Number(d3.max(inYear, (r) => String(r.opened_at).slice(5, 7)) || 12);
+    const months = year ? d3.range(first, last + 1).map((m) => String(m).padStart(2, '0')) : [];
     monthEl.replaceChildren(new Option('All months', ''), ...months.map((m) => new Option(monthName(m), m)));
     monthEl.value = months.includes(p.month) ? p.month : '';
     wkEl.value = p.wk ? String(p.wk) : '';
     const data = months.filter((m) => !monthEl.value || m === monthEl.value)
-      .flatMap((m) => [1, 2, 3, 4, 5].map((wk) => byWeek.get(`${year}-${m}-W${wk}`) || { week: `${year}-${m}-W${wk}`, year, month: m, wk, new: 0, in_progress: 0, pending: 0, resolved: 0 }))
-      .filter((r) => !wkEl.value || String(r.wk) === wkEl.value);
-    shownWeeks = { year, month: monthEl.value, wk: wkEl.value, rows: data };
+      .flatMap((m) => [1, 2, 3, 4, 5].map((wk) => ({ week: `${year}-${m}-W${wk}`, year, month: m, wk, ...(counts.get(`${year}-${m}-W${wk}`) || { new: 0, in_progress: 0, pending: 0, resolved: 0 }) })))
+      .filter((r) => !wkEl.value || String(r.wk) === wkEl.value)
+      // drop weeks that lie wholly outside From / To
+      .filter((r) => (!p.sto || iso(r, r.wk * 7 - 6) <= p.sto) && (!p.sfrom || iso(r, lastDayOf(r)) >= p.sfrom));
+    shown = { from: p.sfrom, to: p.sto, year, month: monthEl.value, wk: wkEl.value, rows: data, tickets };
     exportBtns.forEach((b) => { b.disabled = !data.length; });
     chartEl.replaceChildren();
-    if (!data.length) { const n = document.createElement('div'); n.className = 'ia-empty'; n.textContent = 'No tickets were opened in this week.'; chartEl.append(n); return; }
+    if (!data.length) { const n = document.createElement('div'); n.className = 'ia-empty'; n.textContent = 'No tickets were opened in these dates.'; chartEl.append(n); return; }
     const width = chartEl.clientWidth || 600, height = 320;
     const fmtWeek = (d) => `${monthName(d.month).slice(0, 3)} wk ${d.wk}`;
     const lastDay = (d) => (d.wk < 5 ? d.wk * 7 : new Date(Date.UTC(Number(d.year), Number(d.month), 0)).getUTCDate());
