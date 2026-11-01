@@ -55,7 +55,7 @@
       ${art ? `<section class="tk-fix"><h3>Suggested fix from ${esc(art.a.number)}</h3><ol>${art.a.resolution.map((s) => `<li>${esc(s).replace(/`([^`]+)`/g, '<code>$1</code>')}</li>`).join('')}</ol></section>` : ''}
       <footer class="tk-foot">
         <a class="ia-btn ia-reset tk-sn" href="${SN}/incident.do?sysparm_query=number=${encodeURIComponent(r.number)}" target="_blank" rel="noopener">Open in ServiceNow ↗</a>
-        <span class="tk-muted">Needs a sign-in to dev460097. Data here is the Oct 29, 2026 export.</span>
+        <span class="tk-muted">Needs a sign-in to dev460097. Data here was read from ServiceNow on Nov 1, 2026.</span>
       </footer>`;
   };
 

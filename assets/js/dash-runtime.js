@@ -1,5 +1,5 @@
 // Stand-in for the hosted dashboard's data API, so the same page code runs from this one file.
-// Data: ServiceNow incident export (dev460097), Oct 29, 2026.
+// Data: ServiceNow incidents (dev460097), read live Nov 1, 2026.
 (function () {
   const datasets = { incidents: window.IA_INCIDENTS || [] };
   const calcs = {};
