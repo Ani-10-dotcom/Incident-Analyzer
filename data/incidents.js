@@ -1,4 +1,4 @@
-// ServiceNow incidents (dev460097), read live on Nov 1, 2026. Caller and assignee names are left out.
+// ServiceNow incidents (dev460097), read live on Nov 2, 2026. Caller and assignee names are left out.
 window.IA_INCIDENTS = [
  {
   "number": "INC0009009",
