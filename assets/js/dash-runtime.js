@@ -1,7 +1,8 @@
 // Stand-in for the hosted dashboard's data API, so the same page code runs from this one file.
-// Data: ServiceNow incidents (dev460097), read live Nov 2, 2026.
+// Data: ServiceNow incidents (dev460097), live through /api/incidents, saved copy in data/incidents.js.
 (function () {
-  const datasets = { incidents: window.IA_INCIDENTS || [] };
+  // Read on demand, so live.js can swap in the live ServiceNow rows before the page scripts start.
+  const datasets = { get incidents() { return window.IA_INCIDENTS || []; } };
   const calcs = {};
   const cache = {};
   const listeners = [];
@@ -22,6 +23,7 @@
   const run = () => listeners.forEach((fn) => { try { fn(); } catch (e) { console.error(e); } });
   let lastWidth = 0;
   window.addEventListener('resize', () => { const w = document.documentElement.clientWidth; if (w !== lastWidth) { lastWidth = w; run(); } });
+  document.addEventListener('ia:incidents', () => window.dash.refresh());
   window.dash = {
     data,
     calc: (id, spec) => { calcs[id] = spec; },
@@ -31,7 +33,8 @@
     setParams: (o) => { for (const [k, v] of Object.entries(o)) { if (v === null || v === undefined) delete params[k]; else params[k] = v; } run(); },
     resetParams: () => { params = {}; run(); },
     setLink: (name) => { history.replaceState(null, '', '#' + name); },
-    refresh: () => {},
+    // Called after the Refresh button loads new incidents: drop cached calcs and redraw.
+    refresh: () => { for (const k of Object.keys(cache)) delete cache[k]; run(); },
     colors: ['#6b5bd6', '#2f7fd8', '#b0459a', '#e08a1e', '#23a06b', '#c8423a', '#3a9fa6', '#8a7a5c'],
   };
 })();
