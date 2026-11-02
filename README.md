@@ -6,16 +6,19 @@ A static website that lists ServiceNow incidents by priority, flags duplicate an
 - **Known issues** (`/known-issues`): 16 resolution articles written from the export; every ticket is listed under one article.
 - **How it works** (`/about`): data model, priority and status mapping, matching rules and how to refresh the data.
 
-Data is a CSV export of 67 incidents from the ServiceNow developer instance dev460097 (Oct 29, 2026). Caller and assignee names are left out.
+Data is read live from the ServiceNow developer instance dev460097 through `api/incidents.js`, a Vercel server function that calls the Table API with a read-only user. If the instance is asleep, the pages fall back to the saved copy in `data/incidents.js` and say so. Caller and assignee names are left out.
+
+Vercel environment variables: `SN_USER`, `SN_PASSWORD` (a read-only ServiceNow user), optional `SN_INSTANCE` (default `dev460097.service-now.com`).
 
 ## Layout
 
 ```
 index.html, known-issues.html, about.html
 assets/css/   tokens.css (theme + site shell), dashboard.css, kb.css, about.css
-assets/js/    d3.v7.9.0.min.js, dash-runtime.js (data API), calcs.js, dashboard.js, kb.js
+assets/js/    d3.v7.9.0.min.js, dash-runtime.js (data API), live.js (loads /api/incidents), calcs.js, dashboard.js, kb.js
 data/         incidents.js (loaded by the pages), incidents.json, known_issues.json
 docs/known-issues/   the articles as Markdown
+api/          incidents.js (live ServiceNow read, server side)
 vercel.json   clean URLs
 ```
 

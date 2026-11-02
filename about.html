@@ -23,13 +23,13 @@
 <main class="page">
   <header>
     <h1>How it works</h1>
-    <p class="lede">The AI Incident Analyzer lists ServiceNow incidents by priority, flags duplicate and similar tickets, and charts ticket status by week. It runs on 67 incidents read live from the ServiceNow developer instance dev460097 on Nov 2, 2026.</p>
+    <p class="lede">The AI Incident Analyzer lists ServiceNow incidents by priority, flags duplicate and similar tickets, and charts ticket status by week. It reads its incidents live from the ServiceNow developer instance dev460097 each time a page opens, and falls back to a saved copy when the instance is asleep.</p>
   </header>
   <div class="doc">
     <section>
       <h2>Architecture</h2>
       <p>All figures come from one dataset, so every page agrees. The site is static: plain HTML, CSS and JavaScript with d3 v7.9.0, served by Vercel with no build step.</p>
-      <div class="flow"><span>ServiceNow CSV export</span><b>→</b><span><code>data/incidents.js</code></span><b>→</b><span>Calculations (similarity, summary, weekly)</span><b>→</b><span>Dashboard and Known issues pages</span></div>
+      <div class="flow"><span>ServiceNow Table API</span><b>→</b><span><code>/api/incidents</code> (saved copy: <code>data/incidents.js</code>)</span><b>→</b><span>Calculations (similarity, summary, weekly)</span><b>→</b><span>Dashboard and Known issues pages</span></div>
     </section>
 
     <section>
@@ -96,11 +96,12 @@
 
     <section>
       <h2>ServiceNow integration</h2>
-      <p>The data is a CSV snapshot. A live ServiceNow connection is not working yet, so the site is refreshed from a new export.</p>
-      <h3>Refreshing the data</h3>
+      <p>Each page asks <code>/api/incidents</code> for the tickets. That is a small Vercel server function which calls the ServiceNow Table API (<code>/api/now/table/incident</code>) with a read-only ServiceNow user, keeps only the seven fields above (priority mapped to P1 to P5, no caller or assignee names) and sends them to the page. The ServiceNow login is stored in Vercel environment variables (<code>SN_USER</code>, <code>SN_PASSWORD</code>, optional <code>SN_INSTANCE</code>) and never reaches the browser. Answers are cached for about a minute.</p>
+      <p>Developer instances go to sleep when idle. When ServiceNow does not answer, the page shows the saved copy in <code>data/incidents.js</code> with a note saying so. Wake the instance at developer.servicenow.com and reload to get live data again.</p>
+      <h3>Updating the saved copy</h3>
       <ol>
-        <li>Open <code>https://dev460097.service-now.com/incident_list.do?CSV</code> (or open <code>incident_list.do</code> and use Export &gt; CSV from a column header menu).</li>
-        <li>Convert it to the seven fields above, priority mapped to P1 to P5 and caller and assignee names dropped, and replace <code>data/incidents.js</code> and <code>data/incidents.json</code>.</li>
+        <li>Open <code>/api/incidents</code> on the live site while the instance is awake and save the <code>incidents</code> list.</li>
+        <li>Replace <code>data/incidents.js</code> and <code>data/incidents.json</code> with it and update the date in <code>IA_SAVED_LABEL</code>.</li>
         <li>Push to <code>main</code>. Vercel redeploys on its own.</li>
       </ol>
     </section>
@@ -108,8 +109,7 @@
     <section>
       <h2>Next steps</h2>
       <ul>
-        <li>Get the ServiceNow connection working, then switch to a live query.</li>
-        <li>Choose where the known-issue articles are stored for retrieval (RAG).</li>
+                <li>Choose where the known-issue articles are stored for retrieval (RAG).</li>
         <li>When a new export arrives, add its new tickets to the right articles (or write new ones).</li>
       </ul>
     </section>

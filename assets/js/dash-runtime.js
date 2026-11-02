@@ -1,7 +1,8 @@
 // Stand-in for the hosted dashboard's data API, so the same page code runs from this one file.
-// Data: ServiceNow incidents (dev460097), read live Nov 2, 2026.
+// Data: ServiceNow incidents (dev460097), live through /api/incidents, saved copy in data/incidents.js.
 (function () {
-  const datasets = { incidents: window.IA_INCIDENTS || [] };
+  // Read on demand, so live.js can swap in the live ServiceNow rows before the page scripts start.
+  const datasets = { get incidents() { return window.IA_INCIDENTS || []; } };
   const calcs = {};
   const cache = {};
   const listeners = [];
