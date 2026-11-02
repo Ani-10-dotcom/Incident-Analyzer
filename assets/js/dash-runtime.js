@@ -23,6 +23,7 @@
   const run = () => listeners.forEach((fn) => { try { fn(); } catch (e) { console.error(e); } });
   let lastWidth = 0;
   window.addEventListener('resize', () => { const w = document.documentElement.clientWidth; if (w !== lastWidth) { lastWidth = w; run(); } });
+  document.addEventListener('ia:incidents', () => window.dash.refresh());
   window.dash = {
     data,
     calc: (id, spec) => { calcs[id] = spec; },
@@ -32,7 +33,8 @@
     setParams: (o) => { for (const [k, v] of Object.entries(o)) { if (v === null || v === undefined) delete params[k]; else params[k] = v; } run(); },
     resetParams: () => { params = {}; run(); },
     setLink: (name) => { history.replaceState(null, '', '#' + name); },
-    refresh: () => {},
+    // Called after the Refresh button loads new incidents: drop cached calcs and redraw.
+    refresh: () => { for (const k of Object.keys(cache)) delete cache[k]; run(); },
     colors: ['#6b5bd6', '#2f7fd8', '#b0459a', '#e08a1e', '#23a06b', '#c8423a', '#3a9fa6', '#8a7a5c'],
   };
 })();

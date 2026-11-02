@@ -96,7 +96,7 @@
 
     <section>
       <h2>ServiceNow integration</h2>
-      <p>Each page asks <code>/api/incidents</code> for the tickets. That is a small Vercel server function which calls the ServiceNow Table API (<code>/api/now/table/incident</code>) with a read-only ServiceNow user, keeps only the seven fields above (priority mapped to P1 to P5, no caller or assignee names) and sends them to the page. The ServiceNow login is stored in Vercel environment variables (<code>SN_USER</code>, <code>SN_PASSWORD</code>, optional <code>SN_INSTANCE</code>) and never reaches the browser. Answers are cached for about a minute.</p>
+      <p>Each page asks <code>/api/incidents</code> for the tickets. That is a small Vercel server function which calls the ServiceNow Table API (<code>/api/now/table/incident</code>) with a read-only ServiceNow user, keeps only the seven fields above (priority mapped to P1 to P5, no caller or assignee names) and sends them to the page. The ServiceNow login is stored in Vercel environment variables (<code>SN_USER</code>, <code>SN_PASSWORD</code>, optional <code>SN_INSTANCE</code>) and never reaches the browser. Answers are cached for about a minute. The <strong>Refresh from ServiceNow</strong> button on the Dashboard and Known issues pages skips that cache and reads the latest tickets and statuses right away, without reloading the page.</p>
       <p>Developer instances go to sleep when idle. When ServiceNow does not answer, the page shows the saved copy in <code>data/incidents.js</code> with a note saying so. Wake the instance at developer.servicenow.com and reload to get live data again.</p>
       <h3>Updating the saved copy</h3>
       <ol>

@@ -3,7 +3,7 @@
   const qEl = document.getElementById('kb-q');
   const catEl = document.getElementById('kb-cat');
   const countEl = document.getElementById('kb-count');
-  const incidents = window.IA_INCIDENTS || [];
+  let incidents = window.IA_INCIDENTS || [];
 
   // Same word matching as the dashboard's Duplicate / Similar calc.
   const stop = new Set(['a', 'an', 'the', 'to', 'on', 'in', 'for', 'of', 'is', 'not', 'with', 'from', 'when', 'since', 'after', 'all', 'every', 'few', 'my', 'and', 'at', 'by']);
@@ -17,7 +17,7 @@
   // Each article lists its tickets by number. Tickets not listed on any article
   // (for example from a newer export) are suggested by word match, 30% or more alike.
   const listed = new Set();
-  const byNumber = new Map(incidents.map((r) => [r.number, r]));
+  let byNumber = new Map(incidents.map((r) => [r.number, r]));
   const lookalikes = (a) => {
     const phrases = [a.title, ...(a.matches || [])].map(words);
     const linked = (a.tickets || []).filter((n) => byNumber.has(n)).map((n) => ({ r: byNumber.get(n) }));
@@ -60,11 +60,23 @@
     if (el) el.open = true;
   };
 
+  let kbData = null;
+  const build = () => {
+    articles = kbData.map((a) => ({ ...a, _hits: lookalikes(a), _text: [a.number, a.title, a.category, a.assignment_group, a.symptoms, a.cause, a.notes, ...(a.matches || []), ...(a.tickets || []), ...a.resolution].join(' ').toLowerCase() }));
+  };
+  // The Refresh button loaded new incidents: re-link tickets to articles and redraw.
+  document.addEventListener('ia:incidents', () => {
+    incidents = window.IA_INCIDENTS || [];
+    byNumber = new Map(incidents.map((r) => [r.number, r]));
+    if (kbData) { build(); render(); }
+  });
+
   fetch('/data/known_issues.json')
     .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
     .then((data) => {
+      kbData = data;
       data.forEach((a) => (a.tickets || []).forEach((n) => listed.add(n)));
-      articles = data.map((a) => ({ ...a, _hits: lookalikes(a), _text: [a.number, a.title, a.category, a.assignment_group, a.symptoms, a.cause, a.notes, ...(a.matches || []), ...(a.tickets || []), ...a.resolution].join(' ').toLowerCase() }));
+      build();
       [...new Set(articles.map((a) => a.category))].sort().forEach((c) => catEl.add(new Option(c, c)));
       render();
     })

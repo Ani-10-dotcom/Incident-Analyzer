@@ -52,3 +52,10 @@
 .ia-notice a { color: inherit; text-decoration: underline; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .ia-notice { background: #3a2a0c; border-color: #8a6420; color: #ffe2a8; } }
 :root[data-theme="dark"] .ia-notice { background: #3a2a0c; border-color: #8a6420; color: #ffe2a8; }
+
+/* Refresh from ServiceNow button, next to the page title */
+.ia-titlebar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ia-titlebar h1 { margin-right: auto; }
+.ia-refresh { font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; padding: 6px 14px; min-height: 2.1rem; border-radius: 999px; border: 1px solid var(--ia-all, #6b5bd6); background: var(--ia-all, #6b5bd6); color: #fff; white-space: nowrap; }
+.ia-refresh:hover { filter: brightness(1.08); }
+.ia-refresh:disabled { opacity: .7; cursor: progress; }

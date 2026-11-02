@@ -65,8 +65,10 @@ module.exports = async (req, res) => {
     opened_at: x.opened_at || '',
   }));
 
-  // Vercel's edge keeps this answer for 60 seconds and serves the previous one
-  // for up to a day while it fetches a new one in the background.
-  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=86400');
+  // Normal page loads: Vercel's edge keeps this answer for 60 seconds and serves
+  // the previous one for up to a day while it fetches a new one in the background.
+  // The Refresh button asks with ?fresh=1, which always goes to ServiceNow.
+  const fresh = /[?&]fresh=/.test(req.url || '');
+  res.setHeader('Cache-Control', fresh ? 'no-store' : 'public, s-maxage=60, stale-while-revalidate=86400');
   res.status(200).json({ ok: true, instance, fetched_at: new Date().toISOString(), count: incidents.length, incidents });
 };
